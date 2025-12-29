@@ -557,16 +557,6 @@ ping 172.31.28.72
 
 - Successful ping to the server internal VPN IP (172.31.28.72)
 
-📸 Screenshots:
-
-screenshots/client-wg-up.png (WireGuard interface started on client)
-
-screenshots/client-ping-test.png (Ping to server confirms connectivity)
-
-Stop the VPN (if needed):
-
-sudo wg-quick down /home/user/client.conf
-
 ## 3. Verification
 ```bash
 sudo wg show
