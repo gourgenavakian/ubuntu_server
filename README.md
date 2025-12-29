@@ -678,3 +678,125 @@ sudo ufw reload
 >http://SERVER_PUBLIC_IP:3000
 
 ![owasp-juice-shop.png](screenshots/bonus-part/owasp-juice-shop.png)
+
+# Encrypted Remote Backups
+
+## Overview
+
+A secure automated backup system was implemented using:
+
+- ***Asymmetric GPG encryption (public/private keys)***
+
+- ***SSH key-based authentication***
+
+- ***Cron-based automation***
+
+- ***Remote storage on AWS backup server***
+
+Backups are ***encrypted before transfer*** and cannot be ***decrypted without the private key.***
+
+## 1. GPG Key Generation (Backup Server)
+
+Keys are generated on the backup server
+(private key never leaves it).
+```bash
+gpg --full-generate-key
+```
+
+***Recommended options:***
+
+- Type: RSA and RSA
+
+- Key size: 4096
+
+- Expiration: optional
+
+- User ID: backup@server_ip
+
+- Strong passphrase (protects private key)
+![generate-key.png](screenshots/bonus-part/generate-key.png)
+
+***Export Public Key***
+```bash
+gpg --export --armor backup@server > backup_public.key
+```
+
+***Display Public Key (for manual copy)***
+```bash
+cat backup_public.key
+```
+
+The public key content is copied from AWS terminal output
+and manually pasted on the VBox server.
+
+![backup_public.key.png](screenshots/bonus-part/backup_public.key.png)
+
+## 2. Import Public Key on Main Server (Ubuntu VBox)
+
+On the local Ubuntu VBox server, create the key file:
+```bash
+nano /tmp/backup_public.key
+```
+
+- Paste the entire public key block copied from AWS:
+```bash
+-----BEGIN PGP PUBLIC KEY BLOCK-----
+...
+-----END PGP PUBLIC KEY BLOCK-----
+```
+
+- Import the key:
+```bash
+gpg --import /tmp/backup_public.key
+```
+
+- Verify import:
+```bash
+gpg --list-keys
+```
+![list-keys.png](screenshots/bonus-part/list-keys.png)
+
+## 3. Backup Script (Asymmetric Encryption)
+
+Create the backup script on Ubuntu VBox:
+```bash
+sudo nano /usr/local/bin/backup.sh
+```
+Script: backup.sh
+![backup-script.png](screenshots/bonus-part/backup-script.png)
+
+## 4. Secure Script Permissions
+```bash
+sudo chmod 700 /usr/local/bin/backup.sh
+sudo chown root:root /usr/local/bin/backup.sh
+```
+
+## 5. Manual Test
+```bash
+   sudo /usr/local/bin/backup.sh
+```
+![run-backups.png](screenshots/bonus-part/run-backups.png)
+
+On backup server:
+```bash
+ls /backups
+```
+![aws-backups.png](screenshots/bonus-part/aws-backups.png)
+
+## 6. Cron Automation
+
+Edit root crontab:
+```bash
+sudo crontab -e
+```
+
+Daily backup at 02:00:
+```bash
+0 2 * * * /usr/local/bin/backup.sh
+```
+
+Verify:
+```bash
+sudo crontab -l
+```
+![crontab.png](screenshots/bonus-part/crontab.png)
